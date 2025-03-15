@@ -238,6 +238,33 @@ combos = [
 ]
 ```
 
+#### Fork
+
+In the `fork` sub-table, you can configure the keyboard's key fork functionality. Fork allows you to define a trigger key and a group of conditions. When any of the conditions are met, the trigger key replaced with any_output key, otherwise with the none_output key action.
+The supported conditions currently test the state of modifiers and lock leds.
+
+Fork configuration includes the following parameters:
+
+- `forks`: An array containing all defined forks. Each fork configuration is an object containing the following attributes:
+  - `trigger`: Defines the triggering action.
+  - `none_output`: A string defining the output action to be triggered when non of the listed `conditions` are met
+  - `any_output`: A string defining the output action to be triggered when any of the listed `conditions` is met
+  - `conditions`: An array of strings defining the keys modifier and lock keys which should be used as condition. The legal values are: "LShift", "LCtrl", "LAlt", "LGui", "RShift", "RCtrl", "RAlt", "RGui", "CapsLock", "ScrollLock", "NumLock"
+
+Here is an example of fork configuration:
+
+```toml
+[behavior.fork]
+forks = [
+  # Shift + BackSpace output Delete key
+  { trigger = "Backspace", none_output = "Backspace", any_output = "Delete", conditions = ["LShift", "RShift"] },  
+  # Shift + , output ; key
+  { trigger = "Comma", none_output = "Comma", any_output = "Semicolon", conditions = ["LShift", "RShift"] },  
+  # Shift + . output : key
+  { trigger = "Dot", none_output = "Dot", any_output = "WM(Semicolon, LShift)", conditions = ["LShift", "RShift"] },  
+]
+```
+
 ### `[light]`
 
 `[light]` section defines lights of the keyboard, aka `capslock`, `scrolllock` and `numslock`. They are actually an input pin, so there are two fields available: `pin` and `low_active`.

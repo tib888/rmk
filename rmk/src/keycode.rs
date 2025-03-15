@@ -1162,7 +1162,7 @@ impl KeyCode {
 
 #[repr(u8)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-enum HidModifierBit {
+pub enum HidModifierBit {
     LCtrl = 1 << 0,
     LShift = 1 << 1,
     LAlt = 1 << 2,

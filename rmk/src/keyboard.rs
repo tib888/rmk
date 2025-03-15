@@ -9,7 +9,7 @@ use crate::usb::descriptor::KeyboardReport;
 use crate::{
     action::{Action, KeyAction},
     keyboard_macro::{MacroOperation, NUM_MACRO},
-    keycode::{KeyCode, ModifierCombination},
+    keycode::{KeyCode, ModifierCombination, HidModifierBit},
     keymap::KeyMap,
     usb::descriptor::ViaReport,
 };
@@ -195,10 +195,10 @@ impl<'a, const ROW: usize, const COL: usize, const NUM_LAYER: usize>
 
         if self.combo_on {
             if let Some(key_action) = self.process_combo(key_action, key_event).await {
-                self.process_key_action(key_action, key_event).await;
+                self.process_key_action(self.process_forks(key_action), key_event).await;
             }
         } else {
-            self.process_key_action(key_action, key_event).await;
+            self.process_key_action(self.process_forks(key_action), key_event).await;
         }
     }
 
@@ -737,6 +737,41 @@ impl<'a, const ROW: usize, const COL: usize, const NUM_LAYER: usize>
                 _ => (),
             };
         }
+    }
+
+    fn process_forks(&self, key_action: KeyAction) -> KeyAction {
+        if self.keymap.borrow().forks.len() > 0 {        
+            for fork in &self.keymap.borrow().forks {
+                if fork.trigger == key_action {
+                    for condition in &fork.conditions {
+                        if let KeyAction::Single(Action::Key(key)) = condition {
+                            let any = match key {
+                                KeyCode::LCtrl  => self.report.modifier & HidModifierBit::LCtrl as u8 != 0,
+                                KeyCode::LShift => self.report.modifier & HidModifierBit::LShift as u8 != 0,
+                                KeyCode::LAlt => self.report.modifier & HidModifierBit::LAlt as u8 != 0,
+                                KeyCode::LGui => self.report.modifier & HidModifierBit::LGui as u8 != 0,
+                                KeyCode::RCtrl  => self.report.modifier & HidModifierBit::RCtrl as u8 != 0,
+                                KeyCode::RShift => self.report.modifier & HidModifierBit::RShift as u8 != 0,
+                                KeyCode::RAlt => self.report.modifier & HidModifierBit::RAlt as u8 != 0,
+                                KeyCode::RGui => self.report.modifier & HidModifierBit::RGui as u8 != 0,
+                                KeyCode::NumLock => self.report.leds & 0x01 != 0,
+                                KeyCode::CapsLock => self.report.leds & 0x02 != 0,
+                                KeyCode::ScrollLock => self.report.leds & 0x04 != 0,
+                                //KeyCode::Compose => self.report.leds & 0x08 != 0,
+                                //KeyCode::Kana => self.report.leds & 0x10 != 0,
+                                _ => false
+                            };
+
+                            if any {
+                                return fork.any_output; 
+                            }               
+                        }
+                    }                    
+                    return fork.none_output;
+                }
+            }
+        }
+        key_action
     }
 
     // Process a single keycode, typically a basic key or a modifier key.

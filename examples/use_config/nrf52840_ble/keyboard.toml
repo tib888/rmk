@@ -70,3 +70,13 @@ combos = [
   # Three-key combo, press A, S, and D keys to output "X"
   { actions = ["A", "S", "D"], output = "X" }
 ]
+
+[behavior.fork]
+forks = [
+  # Shift + BackSpace output Delete key
+  { trigger = "Backspace", none_output = "Backspace", any_output = "Delete", conditions = ["LShift", "RShift"] },
+  # Shift + , output ; key
+  { trigger = "Comma", none_output = "Comma", any_output = "Semicolon", conditions = ["LShift", "RShift"] },
+  # Shift + . output : key
+  { trigger = "Dot", none_output = "Dot", any_output = "WM(Semicolon, LShift)", conditions = ["LShift", "RShift"] },
+]

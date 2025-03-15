@@ -73,6 +73,7 @@ pub mod config;
 pub mod debounce;
 pub mod direct_pin;
 pub mod event;
+pub mod fork;
 pub mod hid;
 pub mod input_device;
 pub mod keyboard;

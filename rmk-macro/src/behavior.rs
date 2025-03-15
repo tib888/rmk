@@ -1,7 +1,7 @@
 //! Initialize behavior config boilerplate of RMK
 //!
 
-use crate::config::{CombosConfig, OneShotConfig, TapHoldConfig, TriLayerConfig};
+use crate::config::{CombosConfig, ForksConfig, OneShotConfig, TapHoldConfig, TriLayerConfig};
 use crate::keyboard_config::KeyboardConfig;
 use crate::layout::parse_key;
 use quote::quote;
@@ -117,11 +117,35 @@ fn expand_combos(combos: &Option<CombosConfig>) -> proc_macro2::TokenStream {
     }
 }
 
+fn expand_forks(forks: &Option<ForksConfig>) -> proc_macro2::TokenStream {
+    let default = quote! { ::core::default::Default::default() };
+    match forks {
+        Some(forks) => {
+            let forks_def = forks.forks.iter().map(|fork| {
+                let trigger = parse_key(fork.trigger.to_owned());
+                let none_output = parse_key(fork.none_output.to_owned());
+                let any_output = parse_key(fork.any_output.to_owned());
+                let conditions = fork.conditions.iter().map(|a| parse_key(a.to_owned()));                
+                quote! { ::rmk::fork::Fork::new(#trigger, #none_output, #any_output, [#(#conditions),*]) }
+            });
+            
+            quote! {
+                ::rmk::config::ForksConfig {
+                    forks: ::rmk::heapless::Vec::from_iter([#(#forks_def),*]),
+                    ..Default::default()
+                }
+            }
+        }
+        None => default,
+    }
+}
+
 pub(crate) fn expand_behavior_config(keyboard_config: &KeyboardConfig) -> proc_macro2::TokenStream {
     let tri_layer = expand_tri_layer(&keyboard_config.behavior.tri_layer);
     let tap_hold = expand_tap_hold(&keyboard_config.behavior.tap_hold);
     let one_shot = expand_one_shot(&keyboard_config.behavior.one_shot);
     let combos = expand_combos(&keyboard_config.behavior.combo);
+    let forks = expand_forks(&keyboard_config.behavior.fork);
 
     quote! {
         let behavior_config = ::rmk::config::BehaviorConfig {
@@ -129,6 +153,7 @@ pub(crate) fn expand_behavior_config(keyboard_config: &KeyboardConfig) -> proc_m
             tap_hold: #tap_hold,
             one_shot: #one_shot,
             combo: #combos,
+            fork: #forks,
         };
     }
 }
